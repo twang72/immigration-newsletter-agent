@@ -1,0 +1,43 @@
+name: Weekly Newsletter Agent
+
+on:
+  schedule:
+    # Every Tuesday at 9:00 AM UTC (good time for Canadian/US audience)
+    - cron: "0 9 * * 2"
+  workflow_dispatch:
+    inputs:
+      send_now:
+        description: "Send immediately to subscribers (true) or save as draft (false)"
+        required: false
+        default: "false"
+
+jobs:
+  run-newsletter:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run newsletter agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          BEEHIIV_API_KEY: ${{ secrets.BEEHIIV_API_KEY }}
+          BEEHIIV_PUBLICATION_ID: ${{ secrets.BEEHIIV_PUBLICATION_ID }}
+          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+          REDDIT_USER_AGENT: "immigration-newsletter-bot/1.0"
+        run: |
+          SEND_FLAG=""
+          if [ "${{ github.event.inputs.send_now }}" = "true" ]; then
+            SEND_FLAG="--send"
+          fi
+          python -m newsletter.agent $SEND_FLAG
