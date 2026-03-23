@@ -23,6 +23,7 @@ def publish_to_beehiiv(subject: str, body: str, send_now: bool = False) -> dict:
 
     # Beehiiv v2 API payload format
     payload = {
+        "title": subject,
         "subject": subject,
         "preview_text": subject,
         "content": {
