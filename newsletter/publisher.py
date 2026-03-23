@@ -21,12 +21,15 @@ def publish_to_beehiiv(subject: str, body: str, send_now: bool = False) -> dict:
         "Content-Type": "application/json",
     }
 
-    # Create the post (draft)
+    # Beehiiv v2 API payload format
     payload = {
         "subject": subject,
+        "preview_text": subject,
         "content": {
-            "type": "html",
-            "value": body,
+            "free": {
+                "web": body,
+                "email": body,
+            }
         },
         "status": "draft",
         "audience": "free",
@@ -36,7 +39,10 @@ def publish_to_beehiiv(subject: str, body: str, send_now: bool = False) -> dict:
     print(f"[publisher] Creating post in Beehiiv: \"{subject}\"")
 
     resp = httpx.post(url, json=payload, headers=headers, timeout=30)
+    if not resp.is_success:
+        print(f"[publisher] Beehiiv error {resp.status_code}: {resp.text}")
     resp.raise_for_status()
+
     post = resp.json().get("data", {})
     post_id = post.get("id")
     print(f"[publisher] Draft created: post_id={post_id}")
