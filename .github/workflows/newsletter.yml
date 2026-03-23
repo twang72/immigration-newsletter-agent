@@ -15,6 +15,10 @@ jobs:
   run-newsletter:
     runs-on: ubuntu-latest
 
+    # Allow the job to commit the updated database back to the repo
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,3 +45,13 @@ jobs:
             SEND_FLAG="--send"
           fi
           python -m newsletter.agent $SEND_FLAG
+
+      # Commit the updated SQLite database back to the repo
+      # This is how the dataset grows over time — the repo IS the database
+      - name: Commit updated database
+        run: |
+          git config user.name "Newsletter Agent"
+          git config user.email "agent@noreply.github.com"
+          git add data/immigration.db
+          git diff --staged --quiet || git commit -m "chore: update draw database [skip ci]"
+          git push

@@ -35,19 +35,34 @@ professional (RCIC or immigration lawyer) for advice specific to your situation.
 """
 
 
-def write_newsletter(stories: list[dict]) -> dict:
+def write_newsletter(stories: list[dict], insights: dict | None = None) -> dict:
     today = date.today().strftime("%B %d, %Y")
     stories_json = json.dumps(stories, indent=2)
+
+    insights_block = ""
+    if insights and insights.get("html_section"):
+        insights_block = f"""
+The newsletter must include this proprietary data section verbatim — insert it after the
+news summaries and before the tip of the week:
+
+--- BEGIN DRAW INTELLIGENCE SECTION ---
+{insights["html_section"]}
+--- END DRAW INTELLIGENCE SECTION ---
+"""
 
     user_prompt = f"""Today is {today}.
 
 Here are this week's immigration stories gathered from IRCC, USCIS, and Reddit:
 
 {stories_json}
-
+{insights_block}
 Please write this week's newsletter issue. Include:
 1. A compelling subject line (for the email)
-2. The full newsletter body in HTML
+2. The full newsletter body in HTML, structured as:
+   - Brief intro (2-3 sentences)
+   - News summaries (3-5 stories with key takeaways and source links)
+   - Draw Intelligence Report section (insert verbatim from above if provided)
+   - Practical tip of the week
 
 Return your response as JSON with two keys:
 - "subject": the email subject line

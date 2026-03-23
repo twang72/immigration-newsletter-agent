@@ -7,3 +7,5 @@ venv/
 *.egg-info/
 dist/
 .DS_Store
+# Track the database in git (it's our proprietary dataset)
+# data/immigration.db is intentionally NOT ignored
