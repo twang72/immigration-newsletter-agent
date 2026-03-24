@@ -3,92 +3,85 @@ Takes raw stories from the monitor and uses Claude to write a professional
 weekly immigration newsletter issue in HTML format ready for Beehiiv.
 """
 
-import json
+import re
 from datetime import date
 from shared.claude_client import generate
 
-SYSTEM_PROMPT = """You are the editor of "Canada Immigration Weekly", a trusted newsletter
+SYSTEM_PROMPT = """You are the editor of "Canada Immigration Insider", a trusted newsletter
 for people navigating Canadian and US immigration. Your tone is clear, professional, and
 helpful — like a knowledgeable friend who happens to be an immigration expert.
 
-You write concise, scannable newsletters with:
-- A warm subject line
-- A brief intro (2-3 sentences)
-- 3-5 story summaries with key takeaways
-- A practical tip of the week
-- A disclaimer footer
-
 You always link back to official sources. You never give legal advice — only information.
-Format your output as valid HTML suitable for an email newsletter.
 """
 
 DISCLAIMER = """
-<hr>
-<p style="font-size:12px; color:#888;">
+<hr style="margin-top:32px;">
+<p style="font-size:12px; color:#888; font-family:sans-serif;">
 <strong>Disclaimer:</strong> This newsletter is for informational purposes only and does
 not constitute legal or immigration advice. Always consult a licensed immigration
 professional (RCIC or immigration lawyer) for advice specific to your situation.
 <br><br>
-© Canada Immigration Weekly. You are receiving this because you subscribed.
-<a href="{{unsubscribe_url}}">Unsubscribe</a>
+© Canada Immigration Insider. You are receiving this because you subscribed.
 </p>
 """
 
 
 def write_newsletter(stories: list[dict], insights: dict | None = None) -> dict:
     today = date.today().strftime("%B %d, %Y")
-    stories_json = json.dumps(stories, indent=2)
+
+    stories_text = ""
+    for s in stories:
+        stories_text += f"- [{s['source']}] {s['title']} — {s.get('url', '')}\n"
 
     insights_block = ""
     if insights and insights.get("html_section"):
         insights_block = f"""
-The newsletter must include this proprietary data section verbatim — insert it after the
-news summaries and before the tip of the week:
+Include this Draw Intelligence section verbatim after the news summaries:
 
 --- BEGIN DRAW INTELLIGENCE SECTION ---
 {insights["html_section"]}
 --- END DRAW INTELLIGENCE SECTION ---
 """
 
-    user_prompt = f"""Today is {today}.
+    subject_prompt = f"""Today is {today}.
 
-Here are this week's immigration stories gathered from IRCC, USCIS, and Reddit:
+Based on these immigration stories, write ONE compelling email subject line (max 60 chars).
+Return ONLY the subject line text, nothing else.
 
-{stories_json}
+Stories:
+{stories_text}"""
+
+    body_prompt = f"""Today is {today}.
+
+Write a complete HTML email newsletter for "Canada Immigration Insider" using these stories:
+
+{stories_text}
 {insights_block}
-Please write this week's newsletter issue. Include:
-1. A compelling subject line (for the email)
-2. The full newsletter body in HTML, structured as:
-   - Brief intro (2-3 sentences)
-   - News summaries (3-5 stories with key takeaways and source links)
-   - Draw Intelligence Report section (insert verbatim from above if provided)
-   - Practical tip of the week
 
-Return your response as JSON with two keys:
-- "subject": the email subject line
-- "body": the full HTML body of the newsletter
+Structure:
+1. Brief intro paragraph (2-3 sentences)
+2. News summaries — for each story: headline, 2-3 sentence summary, key takeaway, link
+3. Draw Intelligence Report section (insert verbatim if provided above)
+4. Practical tip of the week
+
+Rules:
+- Return ONLY valid HTML — no markdown, no JSON, no code fences
+- Use inline CSS for styling (email clients strip external CSS)
+- Keep it clean and readable
+- Start directly with <div> or <table>, do NOT include <html>, <head>, or <body> tags
 """
 
-    print("[writer] Generating newsletter with Claude...")
-    response = generate(system=SYSTEM_PROMPT, user=user_prompt)
+    print("[writer] Generating subject line...")
+    subject = generate(system=SYSTEM_PROMPT, user=subject_prompt, max_tokens=100).strip().strip('"')
 
-    # Parse JSON from Claude's response
-    try:
-        # Strip markdown code fences if present
-        clean = response.strip()
-        if clean.startswith("```"):
-            clean = clean.split("```")[1]
-            if clean.startswith("json"):
-                clean = clean[4:]
-        result = json.loads(clean.strip())
-    except Exception:
-        # Fallback: treat entire response as body
-        result = {
-            "subject": f"Canada Immigration Weekly — {today}",
-            "body": response,
-        }
+    print("[writer] Generating newsletter body...")
+    body = generate(system=SYSTEM_PROMPT, user=body_prompt, max_tokens=4096)
 
-    # Append disclaimer
-    result["body"] = result["body"] + DISCLAIMER
-    print(f"[writer] Newsletter written: \"{result['subject']}\"")
-    return result
+    # Strip any accidental markdown code fences
+    body = re.sub(r"^```[a-z]*\n?", "", body.strip())
+    body = re.sub(r"\n?```$", "", body.strip())
+
+    body = body + DISCLAIMER
+
+    print(f"[writer] Newsletter written: \"{subject}\"")
+    return {"subject": subject, "body": body}
