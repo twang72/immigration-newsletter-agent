@@ -6,62 +6,67 @@ Only official government sources — no third-party or social media content.
 import httpx
 from bs4 import BeautifulSoup
 
-IRCC_NEWS_URL = "https://www.canada.ca/en/immigration-refugees-citizenship/news.html"
-IRCC_NOTICES_URL = "https://www.canada.ca/en/immigration-refugees-citizenship/corporate/publications-manuals/operational-bulletins-manuals.html"
+# IRCC advanced news search — reliable source of news releases
+IRCC_RELEASES_URL = (
+    "https://www.canada.ca/en/news/advanced-news-search/news-results.html"
+    "?typ=newsreleases&dprtmnt=departmentofcitizenshipandimmigration&start=2025-01-01"
+)
+IRCC_NOTICES_URL = "https://www.canada.ca/en/immigration-refugees-citizenship/news/notices.html"
 
 
-def fetch_ircc_news() -> list[dict]:
-    """Fetch latest news releases from IRCC."""
+def fetch_ircc_releases() -> list[dict]:
+    """Fetch latest IRCC news releases via the advanced search page."""
     stories = []
     try:
-        resp = httpx.get(IRCC_NEWS_URL, timeout=15, follow_redirects=True)
+        resp = httpx.get(IRCC_RELEASES_URL, timeout=15, follow_redirects=True)
         soup = BeautifulSoup(resp.text, "html.parser")
-        items = (
-            soup.select("li.item article")
-            or soup.select("article.news-item")
-            or soup.select(".views-row")
-            or soup.select("li.item")
-        )
-        for item in items[:6]:
-            title_tag = item.find(["h3", "h2", "a"])
-            if not title_tag:
-                continue
-            title = title_tag.get_text(strip=True)
-            if not title:
-                continue
-            link_tag = item.find("a", href=True)
-            link = link_tag["href"] if link_tag else ""
-            if link and not link.startswith("http"):
-                link = "https://www.canada.ca" + link
-            stories.append({"source": "IRCC News", "title": title, "url": link})
+        # News items are <a> tags linking to ircc news URLs
+        links = soup.find_all("a", href=True)
+        seen = set()
+        for a in links:
+            href = a["href"]
+            title = a.get_text(strip=True)
+            if (
+                "/immigration-refugees-citizenship/news/" in href
+                and title
+                and len(title) > 20
+                and href not in seen
+            ):
+                if not href.startswith("http"):
+                    href = "https://www.canada.ca" + href
+                stories.append({"source": "IRCC News Release", "title": title, "url": href})
+                seen.add(href)
+            if len(stories) >= 6:
+                break
     except Exception as e:
-        print(f"[monitor] IRCC news fetch error: {e}")
+        print(f"[monitor] IRCC releases fetch error: {e}")
     return stories
 
 
 def fetch_ircc_notices() -> list[dict]:
-    """Fetch latest operational bulletins and policy notices from IRCC."""
+    """Fetch latest IRCC policy notices."""
     stories = []
     try:
         resp = httpx.get(IRCC_NOTICES_URL, timeout=15, follow_redirects=True)
         soup = BeautifulSoup(resp.text, "html.parser")
-        items = (
-            soup.select("li.item article")
-            or soup.select("li.item")
-            or soup.select(".views-row")
-        )
-        for item in items[:4]:
-            title_tag = item.find(["h3", "h2", "a"])
-            if not title_tag:
-                continue
-            title = title_tag.get_text(strip=True)
-            if not title:
-                continue
-            link_tag = item.find("a", href=True)
-            link = link_tag["href"] if link_tag else ""
-            if link and not link.startswith("http"):
-                link = "https://www.canada.ca" + link
-            stories.append({"source": "IRCC Policy Notice", "title": title, "url": link})
+        links = soup.find_all("a", href=True)
+        seen = set()
+        for a in links:
+            href = a["href"]
+            title = a.get_text(strip=True)
+            if (
+                "/immigration-refugees-citizenship/" in href
+                and title
+                and len(title) > 20
+                and href not in seen
+                and "notice" in href.lower()
+            ):
+                if not href.startswith("http"):
+                    href = "https://www.canada.ca" + href
+                stories.append({"source": "IRCC Notice", "title": title, "url": href})
+                seen.add(href)
+            if len(stories) >= 4:
+                break
     except Exception as e:
         print(f"[monitor] IRCC notices fetch error: {e}")
     return stories
@@ -70,7 +75,7 @@ def fetch_ircc_notices() -> list[dict]:
 def gather_stories() -> list[dict]:
     print("[monitor] Gathering official IRCC news and notices...")
     stories = []
-    stories.extend(fetch_ircc_news())
+    stories.extend(fetch_ircc_releases())
     stories.extend(fetch_ircc_notices())
     print(f"[monitor] Found {len(stories)} official stories")
     return stories

@@ -51,8 +51,8 @@ def run(send_now: bool = False, scrape_only: bool = False):
     print("\n[agent] Step 3/5: Monitoring news sources...")
     stories = gather_stories()
     if not stories:
-        print("[agent] No stories found. Aborting.")
-        return
+        print("[agent] No stories found from IRCC — continuing with data insights only.")
+        stories = []
 
     # Step 4: Write newsletter (news + data insights combined)
     print("\n[agent] Step 4/5: Writing newsletter...")
