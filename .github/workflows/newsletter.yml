@@ -37,9 +37,6 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           NEWSLETTER_RECIPIENT_EMAIL: ${{ secrets.NEWSLETTER_RECIPIENT_EMAIL }}
-          REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-          REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-          REDDIT_USER_AGENT: "immigration-newsletter-bot/1.0"
         run: |
           SEND_FLAG=""
           if [ "${{ github.event.inputs.send_now }}" = "true" ]; then
