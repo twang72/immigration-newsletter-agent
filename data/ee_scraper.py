@@ -76,6 +76,25 @@ def scrape_ee_draws() -> list[dict]:
                 "cutoff_score": cutoff_score,
                 "invitations": invitations,
                 "tie_break_date": r.get("drawDateFull", None),
+                # Score band distribution — how many candidates in each CRS range
+                "dd1": r.get("dd1", 0),   # 601-1200
+                "dd2": r.get("dd2", 0),   # 501-600
+                "dd3": r.get("dd3", 0),   # 491-500
+                "dd4": r.get("dd4", 0),   # 481-490
+                "dd5": r.get("dd5", 0),   # 471-480
+                "dd6": r.get("dd6", 0),   # 461-470
+                "dd7": r.get("dd7", 0),   # 451-460
+                "dd8": r.get("dd8", 0),   # 441-450
+                "dd9": r.get("dd9", 0),   # 431-440
+                "dd10": r.get("dd10", 0), # 421-430
+                "dd11": r.get("dd11", 0), # 411-420
+                "dd12": r.get("dd12", 0), # 401-410
+                "dd13": r.get("dd13", 0), # 391-400
+                "dd14": r.get("dd14", 0), # 381-390
+                "dd15": r.get("dd15", 0), # 371-380
+                "dd16": r.get("dd16", 0), # 361-370
+                "dd17": r.get("dd17", 0), # 351-360
+                "dd18": r.get("dd18", 0), # 301-350
             }
             draws.append(draw)
         except Exception as e:
