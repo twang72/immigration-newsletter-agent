@@ -39,19 +39,9 @@ def write_newsletter(stories: list[dict], insights: dict | None = None) -> dict:
     for s in stories:
         stories_text += f"- [{s['source']}] {s['title']} — {s.get('url', '')}\n"
 
-    insights_block = ""
-    if insights and insights.get("html_section"):
-        insights_block = f"""
-Include this Draw Intelligence section verbatim after the news summaries:
-
---- BEGIN DRAW INTELLIGENCE SECTION ---
-{insights["html_section"]}
---- END DRAW INTELLIGENCE SECTION ---
-"""
-
     subject_prompt = f"""Today is {today}.
 
-Based on these immigration stories, write ONE compelling email subject line (max 60 chars).
+Based on these Canadian immigration stories, write ONE compelling email subject line (max 60 chars).
 Return ONLY the subject line text, nothing else.
 
 Stories:
@@ -62,13 +52,11 @@ Stories:
 Write a complete HTML email newsletter for "Canada Immigration Insider" using these stories:
 
 {stories_text}
-{insights_block}
 
 Structure:
 1. Brief intro paragraph (2-3 sentences)
 2. News summaries — for each story: headline, 2-3 sentence summary, key takeaway, link
-3. Draw Intelligence Report section (insert verbatim if provided above)
-4. Practical tip of the week
+3. Practical tip of the week
 
 Rules:
 - Return ONLY valid HTML — no markdown, no JSON, no code fences
@@ -86,6 +74,11 @@ Rules:
     # Strip any accidental markdown code fences
     body = re.sub(r"^```[a-z]*\n?", "", body.strip())
     body = re.sub(r"\n?```$", "", body.strip())
+
+    # Directly inject insights HTML — never pass through Claude
+    if insights and insights.get("html_section"):
+        print("[writer] Injecting data insights section...")
+        body = body + "\n" + insights["html_section"]
 
     body = body + DISCLAIMER
 
