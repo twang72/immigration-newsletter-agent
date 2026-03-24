@@ -1,4 +1,4 @@
-# Passive Income Agent
+# immigration newsletter agent
 
 Autonomous agents that generate income while you sleep — no client involvement required.
 
