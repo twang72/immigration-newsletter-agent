@@ -20,15 +20,25 @@ Rules:
 - Be specific and actionable. Applicants want to know what to DO, not just what happened.
 """
 
+HEADER = """
+<div style="font-family:sans-serif; max-width:680px; margin:0 auto; padding:16px 0 8px 0;">
+  <h1 style="color:#1a6bb5; font-size:22px; margin:0 0 4px 0;">Canada Immigration Insider</h1>
+  <p style="color:#888; font-size:13px; margin:0;">Your weekly briefing on Canadian immigration</p>
+  <hr style="border:none; border-top:2px solid #1a6bb5; margin:12px 0 24px 0;">
+</div>
+"""
+
 DISCLAIMER = """
-<hr style="margin-top:32px;">
-<p style="font-size:12px; color:#888; font-family:sans-serif;">
-<strong>Disclaimer:</strong> This newsletter is for informational purposes only and does
-not constitute legal or immigration advice. Always consult a licensed immigration
-professional (RCIC or immigration lawyer) for advice specific to your situation.
-<br><br>
-© Canada Immigration Insider. You are receiving this because you subscribed.
-</p>
+<div style="font-family:sans-serif; max-width:680px; margin:0 auto;">
+  <hr style="border:none; border-top:1px solid #ddd; margin:32px 0 16px 0;">
+  <p style="font-size:12px; color:#888; line-height:1.6;">
+    <strong>Disclaimer:</strong> This newsletter is for informational purposes only and does
+    not constitute legal or immigration advice. Always consult a licensed immigration
+    professional (RCIC or immigration lawyer) for advice specific to your situation.
+    <br><br>
+    © Canada Immigration Insider. You are receiving this because you subscribed.
+  </p>
+</div>
 """
 
 
@@ -76,11 +86,17 @@ Rules:
     body = re.sub(r"\n?```$", "", body.strip())
 
     # Directly inject insights HTML — never pass through Claude
+    # Wrapped in a closed div to prevent disclaimer bleeding into tables
     if insights and insights.get("html_section"):
         print("[writer] Injecting data insights section...")
-        body = body + "\n" + insights["html_section"]
+        insights_wrapped = (
+            '<div style="font-family:sans-serif; max-width:680px; margin:24px auto 0 auto;">'
+            + insights["html_section"]
+            + "</div>"
+        )
+        body = body + "\n" + insights_wrapped
 
-    body = body + DISCLAIMER
+    body = HEADER + body + DISCLAIMER
 
     print(f"[writer] Newsletter written: \"{subject}\"")
     return {"subject": subject, "body": body}

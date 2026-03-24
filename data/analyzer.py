@@ -187,7 +187,15 @@ Please produce a newsletter section called "📊 Draw Intelligence Report" with 
 
 5. **Your Number This Week** — One specific CRS score threshold applicants should watch, with data-backed reasoning why.
 
-Format as clean HTML with inline CSS. Be precise with numbers. Focus entirely on Canada immigration — no US content.
+HTML formatting rules:
+- Use inline CSS only
+- All tables must have style="width:100%; border-collapse:collapse; font-family:sans-serif;"
+- Table header cells: style="background:#1a6bb5; color:white; padding:8px 12px; text-align:left;"
+- Table data cells: style="padding:8px 12px; border-bottom:1px solid #eee;"
+- Section headings: style="color:#1a6bb5; font-size:16px; margin:24px 0 8px 0;"
+- Do NOT include <html>, <head>, <body> tags — start directly with content
+- Focus entirely on Canada immigration — no US content
+
 This section is what makes our newsletter worth subscribing to."""
 
     analysis = generate(system=ANALYST_SYSTEM, user=user_prompt, max_tokens=2048)
