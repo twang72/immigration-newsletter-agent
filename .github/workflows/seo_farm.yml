@@ -1,0 +1,63 @@
+name: SEO Farm — Publish Articles
+
+on:
+  schedule:
+    # Runs every Monday and Thursday at 9am UTC
+    - cron: "0 9 * * 1,4"
+  workflow_dispatch:
+    inputs:
+      articles:
+        description: "Number of articles to write"
+        required: false
+        default: "3"
+      country:
+        description: "Filter to one country (e.g. Canada, Australia, UK)"
+        required: false
+        default: ""
+      publish:
+        description: "Publish immediately? (true/false)"
+        required: false
+        default: "false"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run SEO farm agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USERNAME: ${{ secrets.WP_USERNAME }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          ARGS="--articles ${{ github.event.inputs.articles || '3' }}"
+          COUNTRY="${{ github.event.inputs.country || '' }}"
+          PUBLISH="${{ github.event.inputs.publish || 'false' }}"
+
+          if [ -n "$COUNTRY" ]; then
+            ARGS="$ARGS --country $COUNTRY"
+          fi
+          if [ "$PUBLISH" = "true" ]; then
+            ARGS="$ARGS --publish"
+          fi
+
+          python -m seo_farm.agent $ARGS
+
+      - name: Commit updated SEO database
+        run: |
+          git config user.name "SEO Farm Bot"
+          git config user.email "bot@github-actions"
+          git add data/seo_farm.db
+          git diff --staged --quiet || git commit -m "chore: update seo farm tracker [skip ci]"
+          git push
