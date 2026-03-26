@@ -139,6 +139,9 @@ def write_article(keyword: str, country: str) -> dict:
     }
     tags.extend(country_tags.get(country, []))
 
+    # Remove the H1 from content — WordPress renders the post title as H1 already
+    html = re.sub(r"<h1[^>]*>.*?</h1>", "", html, count=1, flags=re.IGNORECASE | re.DOTALL).strip()
+
     print(f"[article_writer] Done: '{title}' ({len(html)} chars)")
 
     return {
