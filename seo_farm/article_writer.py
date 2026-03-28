@@ -69,6 +69,67 @@ Use this exact structure:
 """
 
 
+def _apply_inline_styles(html: str) -> str:
+    """
+    Apply inline styles directly to each HTML element.
+    Bypasses WordPress stripping class attributes from post content.
+    """
+    from bs4 import BeautifulSoup
+
+    soup = BeautifulSoup(html, "html.parser")
+
+    for tag in soup.find_all("h2"):
+        tag["style"] = "color:#1a4fa0;font-size:1.45em;margin:2em 0 0.6em;padding-bottom:0.3em;border-bottom:2px solid #e8f0fe;"
+
+    for tag in soup.find_all("h3"):
+        tag["style"] = "color:#2d6bc4;font-size:1.15em;margin:1.5em 0 0.4em;"
+
+    for tag in soup.find_all("ul"):
+        tag["style"] = "margin:0.5em 0 1.2em 1.5em;padding-left:1em;"
+
+    for tag in soup.find_all("ol"):
+        tag["style"] = "margin:0.5em 0 1.2em 1.5em;padding-left:1em;"
+
+    for tag in soup.find_all("li"):
+        tag["style"] = "margin-bottom:0.5em;"
+
+    for tag in soup.find_all("table"):
+        tag["style"] = "width:100%;border-collapse:collapse;margin:1.2em 0;font-size:0.95em;"
+
+    for tag in soup.find_all("th"):
+        tag["style"] = "background:#1a4fa0;color:#fff;padding:0.7em 1em;text-align:left;"
+
+    for i, row in enumerate(soup.find_all("tr")):
+        for td in row.find_all("td"):
+            bg = "#f8faff" if i % 2 == 0 else "#fff"
+            td["style"] = f"padding:0.65em 1em;border-bottom:1px solid #e2e8f0;background:{bg};"
+
+    for tag in soup.find_all("details"):
+        tag["style"] = "border:1px solid #e2e8f0;border-radius:8px;margin:0.6em 0;overflow:hidden;"
+
+    for tag in soup.find_all("summary"):
+        tag["style"] = "padding:0.9em 1.1em;cursor:pointer;font-weight:600;color:#1a4fa0;background:#f8faff;display:flex;justify-content:space-between;align-items:center;"
+
+    for tag in soup.find_all("div", class_="callout"):
+        tag["style"] = "background:#e8f0fe;border-left:4px solid #1a4fa0;border-radius:0 8px 8px 0;padding:1em 1.2em;margin:1.5em 0;"
+        del tag["class"]
+
+    for tag in soup.find_all("div", class_="warning"):
+        tag["style"] = "background:#fff8e1;border-left:4px solid #f59e0b;border-radius:0 8px 8px 0;padding:1em 1.2em;margin:1.5em 0;"
+        del tag["class"]
+
+    for tag in soup.find_all("div", class_="cta-box"):
+        tag["style"] = "background:linear-gradient(135deg,#1a4fa0 0%,#2d6bc4 100%);color:#fff;border-radius:10px;padding:1.5em 1.8em;margin:2em 0 1em;text-align:center;"
+        del tag["class"]
+
+    wrapper = f'<div style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;color:#1a1a2e;line-height:1.8;">{soup}</div>'
+    return wrapper
+
+
+def _wrap_article(html: str) -> str:
+    return _apply_inline_styles(html)
+
+
 def _extract_title(html: str) -> str:
     """Extract H1 text from generated HTML."""
     match = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.IGNORECASE | re.DOTALL)
@@ -141,6 +202,9 @@ def write_article(keyword: str, country: str) -> dict:
 
     # Remove the H1 from content — WordPress renders the post title as H1 already
     html = re.sub(r"<h1[^>]*>.*?</h1>", "", html, count=1, flags=re.IGNORECASE | re.DOTALL).strip()
+
+    # Wrap with professional styling
+    html = _wrap_article(html)
 
     print(f"[article_writer] Done: '{title}' ({len(html)} chars)")
 
