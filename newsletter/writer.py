@@ -96,7 +96,11 @@ Rules:
         )
         body = body + "\n" + insights_wrapped
 
-    body = HEADER + body + DISCLAIMER
+    # Safety-close any unclosed table elements before the disclaimer.
+    # Orphaned closing tags are harmless if the table is already closed,
+    # but prevent the disclaimer from being swallowed into the last <td>.
+    table_closer = "\n</td></tr></tbody></table>\n"
+    body = HEADER + body + table_closer + DISCLAIMER
 
     print(f"[writer] Newsletter written: \"{subject}\"")
     return {"subject": subject, "body": body}
