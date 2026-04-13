@@ -198,7 +198,7 @@ HTML formatting rules:
 
 This section is what makes our newsletter worth subscribing to."""
 
-    analysis = generate(system=ANALYST_SYSTEM, user=user_prompt, max_tokens=2048)
+    analysis = generate(system=ANALYST_SYSTEM, user=user_prompt, max_tokens=8192)
 
     # Strip any accidental markdown fences
     import re
